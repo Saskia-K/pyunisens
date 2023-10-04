@@ -23,6 +23,7 @@ todo: coherent attribute setting in __init__ and set_data()
 import os
 import logging
 import datetime
+import warnings
 from xml.etree import ElementTree as ET
 from xml.etree.ElementTree import Element
 from .entry import Entry, FileEntry, ValuesEntry, SignalEntry, MiscEntry
@@ -85,7 +86,9 @@ class Unisens(Entry):
 
         if os.path.isfile(self._file) and not makenew:
             logging.debug('loading unisens.xml from {}'.format(self._file))
-            self.read_unisens(folder, filename=filename)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.read_unisens(folder, filename=filename)
         else:
             logging.debug('New unisens.xml will be created at {}'.format(self._file))
             if not timestampStart:
@@ -230,6 +233,11 @@ class Unisens(Entry):
         :param filename: usually 'unisens.xml'
         :returns: self
         """
+        warnings.warn(f'`read_unisens` is deprecated and will be removed with the '
+                      f'next release. Please read your unisens file by calling'
+                      f' Unisens(folder=folder, filename=filename).',
+                      category=DeprecationWarning, stacklevel=2)
+        # Saving data from one unisens file to another is still possible with Unisens.save() .
         folder += '/'  # to avoid any ospath errors and confusion, append /
         file = os.path.join(os.path.dirname(folder), filename)
         if not os.path.isfile(file):
