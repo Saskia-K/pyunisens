@@ -72,6 +72,7 @@ class Entry(ABC):
         for key in kwargs:
             self.set_attrib(key, kwargs[key])
         self._autosave()
+        self.log = logging.getLogger('unisens_logger')
 
     def __contains__(self, item):
         if item in self.__dict__: return True
@@ -215,7 +216,7 @@ class Entry(ABC):
             # this means new channel names are indicated and will overwrite.
             assert len(ch_names) == n_data, f'len {ch_names}!={n_data}'
             if hasattr(self, 'channel'):
-                logging.warning('Channels present will be overwritten')
+                self.log.warning('Channels present will be overwritten')
                 self.remove_entry('channel')
             for name in ch_names:
                 channel = MiscEntry('channel', key='name', value=name)
@@ -223,7 +224,7 @@ class Entry(ABC):
         elif not hasattr(self, 'channel'):
             # this means no channel names are indicated and none exist
             # we create new generic names for the channels
-            logging.info('No channel names indicated, will use generic names')
+            self.log.info('No channel names indicated, will use generic names')
             for i in range(n_data):
                 channel = MiscEntry('channel', key='name', value=f'ch_{i}')
                 self.add_entry(channel)
@@ -370,7 +371,7 @@ class Entry(ABC):
             del self.attrib[name]
             del self.__dict__[name]
         else:
-            logging.error('{} not in attrib'.format(name))
+            self.log.error('{} not in attrib'.format(name))
         self._autosave()
         return self
 
@@ -435,12 +436,12 @@ class FileEntry(Entry):
             valid_filename(self.id)
             self._filename = os.path.join(self._folder, self.id)
             if not os.access(self._filename, os.F_OK):
-                logging.error('File {} does not exist'.format(self.id))
+                self.log.error('File {} does not exist'.format(self.id))
         elif id:
             # writing entry
             valid_filename(id)
             if os.path.splitext(str(id))[-1] == '':
-                logging.warning('id should be a filename with extension ie. .bin')
+                self.log.warning('id should be a filename with extension ie. .bin')
             self._filename = os.path.join(self._folder, id)
             self.set_attrib('id', id)
             # ensure subdirectories exist to write data
@@ -624,7 +625,7 @@ class CsvFileEntry(FileEntry):
         assert decimalSeparator and separator, 'Must supply separators'
 
         if not self.id.endswith('csv'):
-            logging.warning(f'id "{id}" does not end in .csv')
+            self.log.warning(f'id "{id}" does not end in .csv')
 
         csvFileFormat = MiscEntry('csvFileFormat', parent=self)
         csvFileFormat.set_attrib('decimalSeparator', decimalSeparator)
